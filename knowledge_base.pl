@@ -131,7 +131,68 @@
     % OM Measurement predicates
     om_quantity/2,
     om_has_unit/2,
-    om_has_numerical_value/2
+    om_has_numerical_value/2,
+
+    % Functional Workflow predicates
+    workflow/1,
+    workflow_description/2,
+    workflow_entry_procedure/2,
+    workflow_mode_requirement/2,
+
+    % Modem Dialing predicates
+    modem_type/2,
+    modem_command/3,
+    modem_response/3,
+    dialing_step/3,
+    dialing_outcome/3,
+
+    % Radar Parameter Control predicates
+    radar_command/4,
+    command_key_binding/3,
+    send_com_step/3,
+    command_timeout/2,
+    q_response_field/4,
+    range_encoding/3,
+
+    % Picture Download predicates
+    picture_reception_state/2,
+    picture_protocol_marker/3,
+    rx_pic_step/3,
+    rle_color_encoding/4,
+    rle_format/4,
+
+    % Picture Save/Load predicates
+    picture_filename_format/3,
+    save_pic_step/3,
+    fetch_pic_step/3,
+    storage_browser_action/3,
+    pic_record_field/3,
+
+    % Map Overlay predicates
+    map_overlay_type/3,
+    map_data_record_type/3,
+    landmark_record_field/4,
+    segment_record_field/4,
+    rx_graph_step/3,
+    coordinate_transform/2,
+    transform_formula/3,
+    lookup_table_purpose/3,
+    write_gfx_step/3,
+    display_toggle_key/3,
+
+    % Station Management predicates
+    station_directory_structure/2,
+    select_station_step/3,
+    load_station_step/3,
+
+    % Interactive Control predicates
+    interactive_session_phase/2,
+    inter_loop_step/3,
+
+    % Workflow Query Helpers
+    workflow_procedures/2,
+    workflow_by_mode/2,
+    command_for_parameter/2
 ]).
 
 %% ============================================================================
@@ -1345,6 +1406,481 @@ version_lineage_helper(Version, [Parent|Rest]) :-
 %% Reference: WMO Manual on Codes (WMO-No. 306)
 %% - wmo_code/3                -> SYNOP weather present codes
 %%
+%% ============================================================================
+%% FUNCTIONAL WORKFLOWS
+%% ============================================================================
+%% High-level functional workflows representing key software operations.
+%% These capture the user-facing capabilities and their implementation details.
+
+%% ----------------------------------------------------------------------------
+%% Workflow Predicates (exported)
+%% ----------------------------------------------------------------------------
+
+%% workflow(WorkflowID)
+%% Declares a high-level functional workflow
+workflow(modem_dialing).
+workflow(radar_parameter_control).
+workflow(picture_download).
+workflow(picture_save).
+workflow(picture_load).
+workflow(map_overlay_download).
+workflow(map_overlay_display).
+workflow(station_management).
+workflow(interactive_control).
+
+%% workflow_description(WorkflowID, Description)
+%% Human-readable description of the workflow
+workflow_description(modem_dialing,
+    'Establish connection to remote radar station via Hayes or Racal-Vadic modem').
+workflow_description(radar_parameter_control,
+    'Adjust radar parameters (tilt, range, gain) via F-key commands during interactive session').
+workflow_description(picture_download,
+    'Receive RLE-compressed radar image data from remote station over serial link').
+workflow_description(picture_save,
+    'Store received radar picture to disk with encoded filename containing metadata').
+workflow_description(picture_load,
+    'Retrieve and display previously saved radar picture from disk catalog').
+workflow_description(map_overlay_download,
+    'Download geographic map overlay data (landmarks and line segments) from radar station').
+workflow_description(map_overlay_display,
+    'Render map overlays on EGA graphics screen using polar-to-cartesian coordinate transform').
+workflow_description(station_management,
+    'Select, add, or remove radar station directories with phone numbers and map files').
+workflow_description(interactive_control,
+    'Main control loop for real-time radar operation with keyboard command dispatch').
+
+%% workflow_entry_procedure(WorkflowID, ProcedureName)
+%% The main procedure that initiates this workflow
+workflow_entry_procedure(modem_dialing, call_station).
+workflow_entry_procedure(radar_parameter_control, send_com).
+workflow_entry_procedure(picture_download, rx_pic_loop).
+workflow_entry_procedure(picture_save, save_pic).
+workflow_entry_procedure(picture_load, fetch_pic).
+workflow_entry_procedure(map_overlay_download, rx_graph_loop).
+workflow_entry_procedure(map_overlay_display, write_gfx).
+workflow_entry_procedure(station_management, select_station).
+workflow_entry_procedure(interactive_control, inter_loop).
+
+%% workflow_mode_requirement(WorkflowID, RequiredMode)
+%% The system mode required to execute this workflow
+workflow_mode_requirement(modem_dialing, modem).
+workflow_mode_requirement(radar_parameter_control, interactive).
+workflow_mode_requirement(picture_download, interactive).
+workflow_mode_requirement(picture_save, rx_pic).
+workflow_mode_requirement(picture_load, modem).
+workflow_mode_requirement(map_overlay_download, interactive).
+workflow_mode_requirement(map_overlay_display, any).
+workflow_mode_requirement(station_management, modem).
+workflow_mode_requirement(interactive_control, interactive).
+
+%% ----------------------------------------------------------------------------
+%% MODEM DIALING WORKFLOW
+%% ----------------------------------------------------------------------------
+%% CallStation procedure: Dials radar station via modem
+
+%% modem_type(TypeID, Description)
+modem_type(hayes, 'Hayes-compatible modem using AT commands').
+modem_type(racal_vadic, 'Racal-Vadic modem with proprietary protocol').
+
+%% modem_command(ModemType, CommandType, CommandSequence)
+%% Commands sent to modem for various operations
+modem_command(hayes, init, 'AT &F &C1 &D2 L M1 E V X4').
+modem_command(hayes, dial, 'ATDT<phone_number>').
+modem_command(racal_vadic, init, '^E^M^E^M O21122211211111112112').
+modem_command(racal_vadic, dial, '^E^M D<phone_number>').
+
+%% modem_response(ResponseCode, ResponseChar, Meaning)
+%% Modem response codes and their meanings
+modem_response(connected_2400, '1', 'Connected at 2400 baud').
+modem_response(connected_2400, 'L', 'Connected at 2400 baud').
+modem_response(no_carrier, '3', 'No carrier detected').
+modem_response(modem_error, '4', 'Modem error').
+modem_response(modem_error, 'C', 'Modem error').
+modem_response(no_dial_tone, '6', 'No dial tone').
+modem_response(no_dial_tone, 'E', 'No dial tone').
+modem_response(busy, '7', 'Line busy').
+modem_response(busy, 'B', 'Line busy').
+modem_response(no_answer, '8', 'No answer').
+modem_response(no_answer, 'F', 'No answer').
+modem_response(timeout, 'T', 'Connection timeout').
+modem_response(answer_tone, 'A', 'Answer tone detected').
+modem_response(dialing, 'D', 'Dialing in progress').
+modem_response(ringing, 'R', 'Ringing remote station').
+
+%% dialing_step(StepNum, Action, Description)
+%% Steps in the modem dialing workflow
+dialing_step(1, check_phone_number, 'Verify station has phone number configured').
+dialing_step(2, select_modem_protocol, 'Choose Hayes or Racal-Vadic command set').
+dialing_step(3, send_dial_command, 'Transmit dial command with phone number').
+dialing_step(4, reset_receive_buffer, 'Clear serial buffer for response monitoring').
+dialing_step(5, wait_modem_response, 'Loop receiving modem status characters').
+dialing_step(6, interpret_response, 'Parse response code to determine connection status').
+dialing_step(7, set_mode_interactive, 'On success, transition to Interactive mode').
+dialing_step(8, handle_failure, 'On failure, display message and hang up').
+
+%% dialing_outcome(Outcome, ResultingMode, Action)
+dialing_outcome(connected, interactive, 'Begin interactive radar control session').
+dialing_outcome(no_phone_number, interactive, 'Direct connection assumed if station has no phone').
+dialing_outcome(failed, modem, 'Return to modem mode, display error, hang up').
+
+%% ----------------------------------------------------------------------------
+%% RADAR PARAMETER CONTROL WORKFLOW
+%% ----------------------------------------------------------------------------
+%% SendCom procedure: Send command and wait for Q response
+
+%% radar_command(CommandID, ByteValue, ParameterAffected, Direction)
+%% Commands that control radar parameters
+radar_command(tilt_up, 2, antenna_tilt, increase).
+radar_command(tilt_down, 5, antenna_tilt, decrease).
+radar_command(range_up, 3, display_range, increase).
+radar_command(range_down, 6, display_range, decrease).
+radar_command(gain_up, 13, receiver_gain, increase).
+radar_command(gain_down, 14, receiver_gain, decrease).
+radar_command(on_off, 1, power_state, toggle).
+radar_command(send_pic, 4, picture_request, initiate).
+radar_command(check_graph, 16, map_overlay_check, query).
+radar_command(send_graph, 10, map_overlay_request, initiate).
+radar_command(status_query, 88, current_status, query).  % 'X' = ASCII 88
+
+%% command_key_binding(FunctionKey, CommandID, Mode)
+%% Keyboard bindings for radar commands
+command_key_binding(f1, tilt_up, interactive).
+command_key_binding(f2, tilt_down, interactive).
+command_key_binding(f3, range_up, interactive).
+command_key_binding(f4, range_down, interactive).
+command_key_binding(f5, gain_up, interactive).
+command_key_binding(f6, gain_down, interactive).
+command_key_binding(f7, send_pic, interactive).
+
+%% send_com_step(StepNum, Action, Description)
+%% Steps in the SendCom command transmission workflow
+send_com_step(1, clear_buffer, 'Reset Buf string to empty').
+send_com_step(2, set_response_false, 'Initialize Response flag to false').
+send_com_step(3, transmit_prefix, 'Send Z prefix character').
+send_com_step(4, delay_15ms, 'Wait 15ms between prefix and command').
+send_com_step(5, transmit_command, 'Send command byte').
+send_com_step(6, antenna_wait, 'If RT=0, wait 1 second for antenna movement').
+send_com_step(7, get_start_time, 'Record current time via DOS interrupt $2C').
+send_com_step(8, poll_response, 'Loop checking time until Response=true or timeout').
+send_com_step(9, handle_timeout, 'If timeout, sound 440Hz beep for 10ms').
+send_com_step(10, update_display, 'If response received, call WriteParams').
+
+%% command_timeout(CommandID, TimeoutCentiseconds)
+%% Timeout values for different command types
+command_timeout(tilt_up, 150).
+command_timeout(tilt_down, 150).
+command_timeout(range_up, 300).
+command_timeout(range_down, 300).
+command_timeout(gain_up, 150).
+command_timeout(gain_down, 150).
+command_timeout(status_query, 150).
+command_timeout(send_graph, 150).
+command_timeout(send_pic, 200).
+command_timeout(check_graph, 150).
+
+%% q_response_field(FieldName, BytePosition, BitMask, Extraction)
+%% Structure of the 10-byte Q response packet
+q_response_field(identifier, 1, 16'FF, 'Must be Q (0x51)').
+q_response_field(gain, 2, 16'F0, 'Upper nibble + 1 = gain value').
+q_response_field(tilt, 3, 16'0F, '12 - lower nibble = tilt index').
+q_response_field(pre_amp, 3, 16'20, 'If set, gain = 17 (PRE mode)').
+q_response_field(rt_mode, 3, 16'90, 'Real-time mode bits').
+q_response_field(range, 4, 16'38, 'Bits 3-5 encode range index').
+q_response_field(hour_tens, 6, 16'FF, 'ASCII digit for hour tens').
+q_response_field(hour_ones, 7, 16'FF, 'ASCII digit for hour ones').
+q_response_field(minute_tens, 8, 16'FF, 'ASCII digit for minute tens').
+q_response_field(minute_ones, 9, 16'FF, 'ASCII digit for minute ones').
+q_response_field(checksum, 10, 16'FF, 'Sum of bytes 2-9').
+
+%% range_encoding(RangeBits, RangeIndex, RangeKm)
+%% Mapping of range bits to range values
+range_encoding(16'28, 0, 10).
+range_encoding(16'08, 1, 25).
+range_encoding(16'30, 2, 50).
+range_encoding(16'00, 3, 100).
+range_encoding(16'20, 4, 200).
+
+%% ----------------------------------------------------------------------------
+%% PICTURE DOWNLOAD WORKFLOW
+%% ----------------------------------------------------------------------------
+%% RxPicLoop: State machine for receiving radar image data
+
+%% picture_reception_state(StateID, Description)
+picture_reception_state(wait_pic, 'Waiting for picture start sequence FF FE FD').
+picture_reception_state(rx_pic, 'Actively receiving RLE-compressed scan lines').
+picture_reception_state(complete, 'All 352 lines received successfully').
+picture_reception_state(aborted, 'User requested abort via ESC key').
+
+%% picture_protocol_marker(MarkerName, ByteSequence, Purpose)
+picture_protocol_marker(start_sequence, [16'FF, 16'FE, 16'FD], 'Indicates picture transmission beginning').
+picture_protocol_marker(line_end, [16'18, 16'18], 'Marks end of RLE-compressed scan line').
+
+%% rx_pic_step(StepNum, Action, Description)
+rx_pic_step(1, send_pic_command, 'Transmit SendPic command and wait for response').
+rx_pic_step(2, clear_screen, 'Clear display planes 0 and 1').
+rx_pic_step(3, show_waiting_message, 'Display WAITING FOR PICTURE message').
+rx_pic_step(4, draw_scale, 'Render left-side intensity scale').
+rx_pic_step(5, set_wait_pic_mode, 'Transition to WaitPic mode').
+rx_pic_step(6, wait_start_sequence, 'Monitor for FF FE FD start marker').
+rx_pic_step(7, set_rx_pic_mode, 'On start sequence, transition to RxPic mode').
+rx_pic_step(8, init_pic_buffer, 'Initialize PicSave buffer at offset -20000').
+rx_pic_step(9, receive_line_loop, 'Interrupt handler accumulates line data').
+rx_pic_step(10, validate_checksum, 'Verify line checksum matches computed value').
+rx_pic_step(11, acknowledge_line, 'Send A for valid line, NUL for invalid').
+rx_pic_step(12, decompress_line, 'Call DispLine to render RLE data to screen').
+rx_pic_step(13, check_completion, 'Loop until line >= 352 or abort').
+rx_pic_step(14, save_picture, 'Call SavePic to write data to disk').
+rx_pic_step(15, hang_up, 'Terminate modem connection').
+
+%% rle_color_encoding(ColorBits, RedOn, GreenOn, Description)
+%% Run-length encoding color values
+rle_color_encoding(0, false, false, 'Black/background').
+rle_color_encoding(1, true, false, 'Red only - light precipitation').
+rle_color_encoding(2, false, true, 'Green only - moderate precipitation').
+rle_color_encoding(3, true, true, 'Yellow (red+green) - heavy precipitation').
+
+%% rle_format(Field, BitPosition, BitWidth, Description)
+%% RLE packet format within scan line
+rle_format(run_length_high, 0, 3, 'Upper 3 bits of run length').
+rle_format(color_code, 5, 2, 'Color encoding (0-3)').
+rle_format(run_length_low, 8, 8, 'Lower 8 bits of run length').
+
+%% ----------------------------------------------------------------------------
+%% PICTURE SAVE/LOAD WORKFLOW
+%% ----------------------------------------------------------------------------
+%% SavePic and FetchPic procedures
+
+%% picture_filename_format(Position, Content, Source)
+%% Encoded filename format: HHMM TRG.PIC
+picture_filename_format(1, hour_tens, 'Time.Hour div 10 + 48').
+picture_filename_format(2, hour_ones, 'Time.Hour mod 10 + 48').
+picture_filename_format(3, minute_tens, 'Time.Minute div 10 + 48').
+picture_filename_format(4, minute_ones, 'Time.Minute mod 10 + 48').
+picture_filename_format(5, tilt_code, 'Tilt + 65 (A-L)').
+picture_filename_format(6, range_code, 'Range + 65 (A-E)').
+picture_filename_format(7, gain_code, 'Gain + 64 (A-Q)').
+picture_filename_format(extension, '.PIC', 'Fixed extension').
+
+%% save_pic_step(StepNum, Action, Description)
+save_pic_step(1, encode_filename, 'Generate filename from picture metadata').
+save_pic_step(2, assign_file, 'Associate filename with file variable').
+save_pic_step(3, rewrite_file, 'Create/overwrite file with block size 1').
+save_pic_step(4, check_io_error, 'Handle disk full or directory full errors').
+save_pic_step(5, block_write, 'Write PicSave buffer to file').
+save_pic_step(6, close_file, 'Close file handle').
+save_pic_step(7, clear_message, 'Remove status message from screen').
+
+%% fetch_pic_step(StepNum, Action, Description)
+fetch_pic_step(1, update_params_display, 'Call WriteParams to show picture metadata').
+fetch_pic_step(2, check_curr_pic, 'If CurrPic=0, clear screen and exit').
+fetch_pic_step(3, redraw_overlays, 'Redraw map overlays if enabled').
+fetch_pic_step(4, assign_file, 'Open picture file by Pic[CurrPic].FileName').
+fetch_pic_step(5, reset_file, 'Open file for reading with block size 1').
+fetch_pic_step(6, handle_not_found, 'Display error if file missing').
+fetch_pic_step(7, block_read, 'Load entire file into PicSave buffer').
+fetch_pic_step(8, decompress_loop, 'Call DispLine for each scan line until line >= 351').
+fetch_pic_step(9, close_file, 'Close file handle').
+
+%% storage_browser_action(Key, Action, Description)
+%% Actions available in the Storage browser window
+storage_browser_action('+', next_pic, 'Move selection to next picture').
+storage_browser_action('-', prev_pic, 'Move selection to previous picture').
+storage_browser_action(return, select_pic, 'Load and display selected picture').
+storage_browser_action(f1, delete_pic, 'Delete selected picture after confirmation').
+storage_browser_action(escape, exit_storage, 'Exit storage browser').
+
+%% pic_record_field(FieldName, Type, Description)
+%% Structure of PicRec for catalog entries
+pic_record_field(filename, 'string[12]', 'DOS 8.3 filename').
+pic_record_field(file_date, integer, 'DOS file date stamp').
+pic_record_field(file_time, integer, 'DOS file time stamp').
+pic_record_field(time, 'TimeRec', 'Radar timestamp (Year, Month, Day, Hour, Minute)').
+pic_record_field(tilt, 'TiltType', 'Tilt index 0-11').
+pic_record_field(range, 'RangeType', 'Range index 0-4').
+pic_record_field(gain, 'GainType', 'Gain value 1-17').
+
+%% ----------------------------------------------------------------------------
+%% MAP OVERLAY DOWNLOAD WORKFLOW
+%% ----------------------------------------------------------------------------
+%% RxGraphLoop: Download geographic overlay data from radar
+
+%% map_overlay_type(MapID, FileName, Description)
+map_overlay_type(map1, 'MAP1.DAT', 'Primary map overlay with landmarks and boundaries').
+map_overlay_type(map2, 'MAP2.DAT', 'Secondary map overlay for additional features').
+
+%% map_data_record_type(RecordType, Size, Fields)
+map_data_record_type(landmark, 8, [bearing, range, name_3char, padding]).
+map_data_record_type(segment, 8, [range1, bearing1, range2, bearing2]).
+
+%% landmark_record_field(Field, Offset, Size, Description)
+landmark_record_field(bearing, 0, 2, 'Direction in degrees from north').
+landmark_record_field(range, 2, 2, 'Distance from radar in decameters').
+landmark_record_field(name, 4, 3, '3-character location identifier').
+landmark_record_field(padding, 7, 1, 'Unused byte').
+
+%% segment_record_field(Field, Offset, Size, Description)
+segment_record_field(range1, 0, 2, 'Start point distance').
+segment_record_field(bearing1, 2, 2, 'Start point bearing').
+segment_record_field(range2, 4, 2, 'End point distance').
+segment_record_field(bearing2, 6, 2, 'End point bearing').
+
+%% rx_graph_step(StepNum, Action, Description)
+rx_graph_step(1, init_buffer_pointer, 'Set BufPtr to Map1 array start').
+rx_graph_step(2, send_graph_command, 'Transmit SendGraph command').
+rx_graph_step(3, check_response, 'Verify response received, exit if not').
+rx_graph_step(4, set_rx_graph_mode, 'Transition to RxGraph mode').
+rx_graph_step(5, show_receiving_message, 'Display RECEIVING MAP OVERLAY message').
+rx_graph_step(6, receive_8byte_records, 'Interrupt handler accumulates 8-byte records').
+rx_graph_step(7, validate_record_checksum, 'Verify record checksum').
+rx_graph_step(8, detect_end_marker, 'Check for 0,0,0,0 end-of-map marker').
+rx_graph_step(9, switch_to_map2, 'On first end marker, point buffer to Map2').
+rx_graph_step(10, acknowledge_record, 'Send A for valid, NUL for invalid').
+rx_graph_step(11, check_completion, 'Loop until MapCount > 3 or abort').
+rx_graph_step(12, save_map1, 'Write Map1 array to MAP1.DAT').
+rx_graph_step(13, save_map2, 'Write Map2 array to MAP2.DAT').
+rx_graph_step(14, return_interactive, 'Set mode back to Interactive').
+
+%% ----------------------------------------------------------------------------
+%% MAP OVERLAY DISPLAY WORKFLOW
+%% ----------------------------------------------------------------------------
+%% WriteGfx: Render map overlays using polar coordinates
+
+%% coordinate_transform(TransformID, Description)
+coordinate_transform(polar_to_screen,
+    'Convert (bearing, range) to (x, y) screen coordinates').
+
+%% transform_formula(Axis, Formula, Description)
+transform_formula(x, '320 + Range * (ASin[Bearing] - 128) / RangeVal',
+    'X offset from center using sine lookup table').
+transform_formula(y, '174 - Range * (ACos[Bearing] - 128) / RangeVal',
+    'Y offset from center using cosine lookup table').
+
+%% lookup_table_purpose(TableName, Size, Description)
+lookup_table_purpose(asin_table, 361, 'Pre-computed sine values * 128 + 128 for 0-360 degrees').
+lookup_table_purpose(acos_table, 361, 'Pre-computed cosine values * 128 + 128 for 0-360 degrees').
+
+%% write_gfx_step(StepNum, Action, Description)
+write_gfx_step(1, select_plane_2, 'Enable writing to graphics plane 2 (blue)').
+write_gfx_step(2, select_or_func, 'Set graphics function to OR mode').
+write_gfx_step(3, calc_range_limits, 'Compute Min (Max/7) and Max (RangeVal * 10) thresholds').
+write_gfx_step(4, render_landmarks, 'Loop through landmark records until 0,0 terminator').
+write_gfx_step(5, filter_by_range, 'Skip landmarks outside Min-Max range').
+write_gfx_step(6, transform_coords, 'Convert polar bearing/range to screen x/y').
+write_gfx_step(7, call_grwrite, 'Render 3-char name at computed position').
+write_gfx_step(8, render_segments, 'Loop through segment records until 0,0 terminator').
+write_gfx_step(9, filter_segments, 'Skip segments with endpoints beyond Max range').
+write_gfx_step(10, draw_line, 'Call GRLine between transformed endpoints').
+
+%% display_toggle_key(Key, OverlayType, Variable)
+%% Keyboard toggles for map display elements
+display_toggle_key('G', all_graphics, 'GraphicsOn').
+display_toggle_key('R', range_marks, 'RngMksOn').
+display_toggle_key('1', map1_overlay, 'Gfx1On').
+display_toggle_key('2', map2_overlay, 'Gfx2On').
+display_toggle_key('H', help_overlay, 'HelpOn').
+
+%% ----------------------------------------------------------------------------
+%% STATION MANAGEMENT WORKFLOW
+%% ----------------------------------------------------------------------------
+%% SelectStation, LoadStation, AddStation, DelStation
+
+%% station_directory_structure(Item, Purpose)
+station_directory_structure('????????.STA', 'Station subdirectory (8-char name + .STA)').
+station_directory_structure('PHONENUM.TXT', 'Text file containing modem phone number').
+station_directory_structure('MAP1.DAT', 'Binary map overlay data file').
+station_directory_structure('MAP2.DAT', 'Secondary binary map overlay file').
+station_directory_structure('????????.PIC', 'Saved radar picture files').
+
+%% select_station_step(StepNum, Action, Description)
+select_station_step(1, change_to_parent, 'If station loaded, cd to parent directory').
+select_station_step(2, open_window, 'Display SELECT STATION window (27,1,25,14)').
+select_station_step(3, scan_directories, 'Find all *.STA subdirectories').
+select_station_step(4, list_stations, 'Display A-M lettered list of stations').
+select_station_step(5, show_menu, 'Display F1=Add, F2=Remove, ESC=Exit options').
+select_station_step(6, read_key, 'Wait for user keypress').
+select_station_step(7, handle_selection, 'On A-M, call LoadStation for selected station').
+select_station_step(8, handle_add, 'On F1, call AddStation procedure').
+select_station_step(9, handle_delete, 'On F2, call DelStation procedure').
+select_station_step(10, close_window, 'Call UnWindow to restore screen').
+
+%% load_station_step(StepNum, Action, Description)
+load_station_step(1, change_directory, 'ChDir to station subdirectory').
+load_station_step(2, display_name, 'Show station name at position (68,21)').
+load_station_step(3, read_phone_number, 'Load PHONENUM.TXT into PhoneNum variable').
+load_station_step(4, load_map1, 'BlockRead MAP1.DAT into Map1 array').
+load_station_step(5, load_map2, 'BlockRead MAP2.DAT into Map2 array').
+load_station_step(6, scan_pictures, 'Find all *.PIC files and populate Pic array').
+load_station_step(7, parse_filenames, 'Decode time/tilt/range/gain from each filename').
+load_station_step(8, set_curr_pic_zero, 'Initialize CurrPic to 0 (no picture displayed)').
+
+%% ----------------------------------------------------------------------------
+%% INTERACTIVE CONTROL WORKFLOW
+%% ----------------------------------------------------------------------------
+%% InterLoop: Main control loop during active radar session
+
+%% interactive_session_phase(PhaseID, Description)
+interactive_session_phase(initialization, 'Clear screen, query status, check map overlay').
+interactive_session_phase(control_loop, 'Main loop processing keyboard commands').
+interactive_session_phase(termination, 'Hang up modem, clean up, return to modem mode').
+
+%% inter_loop_step(StepNum, Action, Description)
+inter_loop_step(1, increment_max_pic, 'Add slot for potential new picture').
+inter_loop_step(2, set_curr_pic, 'Point to new picture slot').
+inter_loop_step(3, clear_screen, 'Clear radar display area').
+inter_loop_step(4, query_status, 'Send X command up to 4 times for response').
+inter_loop_step(5, handle_no_response, 'If no response, display error, hang up, abort').
+inter_loop_step(6, show_online_indicator, 'Display ON LINE at position (73,22)').
+inter_loop_step(7, check_map_overlay, 'Send CheckGraph, download map if different').
+inter_loop_step(8, enter_control_loop, 'Begin main ReadKbd/dispatch loop').
+inter_loop_step(9, dispatch_f_keys, 'Handle F1-F6 for parameter control').
+inter_loop_step(10, dispatch_commands, 'Handle G, R, 1, 2, H display toggles').
+inter_loop_step(11, handle_disconnect, 'On ESC, confirm and set Key to ^Q').
+inter_loop_step(12, cleanup, 'Hang up if connected, restore state').
+
+%% ----------------------------------------------------------------------------
+%% WORKFLOW QUERY HELPERS
+%% ----------------------------------------------------------------------------
+
+%% workflow_procedures(+Workflow, -Procedures)
+%% Get all procedures involved in a workflow
+workflow_procedures(Workflow, Procedures) :-
+    workflow_entry_procedure(Workflow, Entry),
+    findall(P, calls_transitive(Entry, P), Called),
+    Procedures = [Entry|Called].
+
+%% workflow_by_mode(+Mode, -Workflows)
+%% Find workflows available in a given mode
+workflow_by_mode(Mode, Workflows) :-
+    findall(W, (workflow_mode_requirement(W, Mode) ; workflow_mode_requirement(W, any)), Workflows).
+
+%% command_for_parameter(+Parameter, -Commands)
+%% Find commands that affect a specific parameter
+command_for_parameter(Parameter, Commands) :-
+    findall(cmd(ID, Dir), radar_command(ID, _, Parameter, Dir), Commands).
+
+%% ----------------------------------------------------------------------------
+%% EXAMPLE QUERIES - FUNCTIONAL WORKFLOWS
+%% ----------------------------------------------------------------------------
+%%
+%% % List all workflows
+%% ?- workflow(W), workflow_description(W, Desc).
+%%
+%% % Find steps for modem dialing
+%% ?- dialing_step(N, Action, Desc).
+%%
+%% % Get radar commands and their key bindings
+%% ?- radar_command(Cmd, Byte, Param, Dir), command_key_binding(Key, Cmd, Mode).
+%%
+%% % Trace picture download steps
+%% ?- rx_pic_step(N, Action, Desc).
+%%
+%% % Find map overlay data structure
+%% ?- map_data_record_type(Type, Size, Fields).
+%%
+%% % Query modem response codes
+%% ?- modem_response(Status, Char, Meaning).
+%%
+
 %% ============================================================================
 %% EXAMPLE QUERIES
 %% ============================================================================
