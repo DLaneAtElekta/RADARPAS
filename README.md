@@ -4,56 +4,115 @@ Synthetic git repository built from the RetroEevorg software archive (1984-2024)
 
 Each branch represents a software family. Each commit represents a dated snapshot.
 
-## E300PC / RADARPAS
+## Archive Contents
 
-original Pascal and MODULA-2 code for the E300/E250 radar (see http://ewradar.com/)
+### radar/ -- E300PC / RADARPAS (1985-1992)
 
-This is some very old code written when I was 15 years old.  I still have a version that runs on a DOS simulator (though it only shows canned data).
+Original Pascal and MODULA-2 code for the E300/E250 radar (see http://ewradar.com/)
 
-Graphical Data Entry Manager (GDEM) 1.0 was a line-based digital map|geographic data entry and editing tool.
+This is some very old code written when I was 15 years old. I still have a version that runs on a DOS simulator (though it only shows canned data).
 
-GDEM's input was a set of coordinates manually entered from chart derived measurements.  Protractor coordinates.  Acetate.
+**GDEM (Graphical Data Entry Manager)**
 
-GDEM would output a binary formatted map, based on a pre-defined schema, using a third party EEPROM reader that Arnold had found.
+- GDEM 1.0 was a line-based digital map/geographic data entry and editing tool.
+- GDEM's input was a set of coordinates manually entered from chart derived measurements. Protractor coordinates. Acetate.
+- GDEM would output a binary formatted map, based on a pre-defined schema, using a third party EEPROM reader that Arnold had found.
+- GDEM 1.0 was implemented as 300 lines of Commodore BASIC, which Derek had used with the eighth grade PET computers. DATA statements. GOSUBs.
+- DG was paid $200 in 1984 to produce GDEM 1.0. The development was mostly in the spring and summer.
+- GDEM Version 2.0 was imagined as having graphical preview capabilities. But E300PC happened instead.
 
-GDEM 1.0 was implemented as 300 lines of Commodore BASIC, which Derek had used with the eighth grade PET computers.  DATA statements.  GOSUBs.
+**RADARPAS**
 
-DG was paid 200 in 1984 to produce GDEM 1.0.  The development was mostly in the spring and summer.
+- RADARPAS was the name of the Turbo Pascal program that implemented the E300PC 1.0 product. Hardware PC.
+- RADARPAS's input was data sent from the E300 radar system. It would interact with the system over a modem, and then receive the current radar feed.
+- RADARPAS graphics library allowed visualization of radar images with a map overlay.
+- Implemented in Turbo Pascal. EGA graphics. Hayes Racal-Vadic modem. Graphics, Communication, Control, and GUI modules. Functions. Interrupts.
+- DG was paid $600 in 1985 to produce RADARPAS. This gave Ellason rights to sell as many copies as he wanted.
+- DG made RADARPAS 2.0 with save and load options. The upgrade to 2.0 earned Derek $800 each.
+- Storm cell recognition algorithm for automatic weather detection.
+- Greensville trip. Auto programming.
+- E300RX extensions 1990. Lawrenceburg TX.
+- E250Term 1991 and ISR (Interrupt Service Routine).
+- TopSpeed Modula-2 port -- the Pascal codebase was migrated to Modula-2 for better modularity and separate compilation.
+- Dynamic camera model 1997 and orthorectification.
+- ERDAS plugin architecture.
+- Nelder-Mead simplex optimization for parameter fitting.
+- Forstner-like operator and tie point extraction for image registration.
 
-GDEM Version 2.0 was imagined as having graphical preview capabilities.  But E300PC happened instead.
+**24 dated snapshots** spanning the full evolution from Turbo Pascal to TopSpeed Modula-2:
+- `1985xxxx E300PC Demo` -- earliest demo version
+- `19870412-19870512` -- RADARPAS RadioTx, Tennterm variants (Pascal)
+- `19871102 RADAR MOD Pas2Mod2` -- the Pascal-to-Modula-2 conversion
+- `19880226-19890101` -- SN8801, RADIO, Tenn, Rad1dot1, 2dot1 releases
+- `19880815 RADAR MOD` -- major Modula-2 release with full module set
+- `19890316-19890326` -- RS811A interface, sweep display (assembly + Modula-2)
+- `19910104-19910309` -- RADARDB, E250Term
+- `19921021-19921228` -- Testchan, RADIO, AUTO system, final releases
 
-RADARPAS was the name of the Turbo Pascal program that implemented the E300PC 1.0 product.  Hardware PC.
+### eevorg/ -- EEVORG Cellular Automata (1987-2007)
 
-TurboPascal / OpenObject
+- Cellular automata evolved toward entropy 0.5 -- the edge of chaos.
+- Rule space search using genetic algorithms.
+- Originated as a Turbo Pascal project, later ported to C++ and then .NET.
 
-RADARPAS's input was data sent from the E300 radar system.  It would interact eith the system over a modem, abd then receive the current radar feed.
+### ssm/ -- Spreadsheet Management System (1986-1996)
 
-RADARPAS graphics library allowed visualization of radar images with a map overlay.
+- Custom spreadsheet engine with formula evaluation.
+- Pascal and Modula-2 implementations spanning a decade of evolution.
+- Financial and accounting applications.
 
-Implemented in Turbo Pascal.  EGA Hayes Racal-Vadic.  Graphics Communication Control GUI modules.  Functions.  Interrupts.
+### thewheel/ -- theWheel (1990-2000)
 
-<Depict these as nassi-shneidermen diagrams>
+- Spreading activation networks -- knowledge as navigable space.
+- Visual knowledge browser with coolbar/treeview navigation.
+- Multiple generations: theWheel, wlXxx, theWheel-CoolDraw, theWheel2000.
 
-DG was paid 600 in 1985 to produce RADARPAS.  This gave Ellason rights to sell as many copies as he wanted.
+### cogmap/ -- Cognitive Map (1996)
 
-DG made RADARPAS 2.0 with save and load options.  The upgrade to 2.0 earned Derek 800 each.
+- Early web-based knowledge mapping experiments.
+- HTML-based reference maps and link structures.
 
-Storm cell recognition algorithm
+### gdem/ and gdem-eme/ -- GDEM and EME
 
-Greensville trip.  Auto programming.
+- Graphical Data Entry Manager source and related tools.
+- Geographic/map data editing for radar overlay generation.
 
-E300RX extensions 1990.  Lawrenceburg TX.
+### egalib-math/ -- EGA Library and Math
 
-E250Term 1991 and ISR.
+- Graphics library routines and mathematical utilities.
+- Supporting code for the radar display system.
 
-TopSpeed M2.
+### misc/ -- Miscellaneous
 
-Dynamic camera model 1997 and orthorectification.
+- Pic-Analysis (1989) -- image analysis tools.
+- browsee (2000) -- web browsing experiment.
+- Other small utilities and experiments.
 
-ERDAS plugin architecture
+### bqtourn/ -- BQ Tournament
 
-Nelder-mead optimization.
+- Tournament bracket/scoring software.
 
-Forst-like operator and tie point extraction.
+### kb/ -- Knowledge Base
 
-Travel to Atlanta DC TA IL
+- RDF Turtle and Prolog-format semantic metadata for the RADARPAS project.
+- Machine-readable descriptions of the archive contents.
+
+### documents/
+
+- PDF documentation and historical records.
+
+## Building RADARPAS
+
+The original RADARPAS source can be compiled with FreePascal. See [BUILD.md](BUILD.md) for instructions.
+
+```bash
+# Quick start with Docker
+./build.sh
+
+# Or with FreePascal installed locally
+make
+```
+
+## License
+
+The original software is Copyright (C) 1987 D. G. Lane. All rights reserved.
