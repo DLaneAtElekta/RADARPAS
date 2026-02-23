@@ -27,21 +27,17 @@ The modern `radar/radar.pas` is a FreePascal-compatible stub — it compiles but
 
 ## Architecture
 
-```
-radar/              Main project — 24 dated snapshots (1985–1992)
-                    Pascal monolith → Modula-2 modules over time
-                    Key transition: 19871102 Pas2Mod2
-eevorg/             Cellular automata (Pascal → C++ → C#/.NET)
-ssm/                Spreadsheet engine (Pascal/Modula-2, 26+ releases)
-thewheel/           Knowledge visualization (C++/MFC, 1990–2000)
-cogmap/             Web-based cognitive mapping (1996)
-gdem/               Graphical Data Entry Manager (1984–1985)
-egalib-math/        EGA graphics library + math utilities
-misc/               Browsee, Pic-Analysis, TURING samples
-bqtourn/            Tournament scoring
-kb/                 RDF/Turtle semantic metadata + Prolog query interface
-documents/          PDF documentation
-```
+- **radar/** (1985–1992): **RADARPAS** - A commercial radar terminal for Ellason E300/E250 systems. Evolved from Turbo Pascal monolith to modular TopSpeed Modula-2 with assembly ISRs. Key transition: 19871102 Pas2Mod2.
+- **eevorg/** (1987–2007): **EEVORG** - Cellular automata research exploring the "edge of chaos" (entropy 0.5) using genetic algorithms.
+- **ssm/** (1986–1996): **Spreadsheet Management System** - A custom spreadsheet engine with formula evaluation. Pascal/Modula-2, 26+ releases.
+- **thewheel/** (1990–2000): **theWheel** - Knowledge visualization using spreading activation networks and visual graph browsing. C++/MFC.
+- **cogmap/** (1996): **Cognitive Map** - Web-based knowledge mapping experiments.
+- **gdem/** (1984–1985): **Graphical Data Entry Manager** - Mapping tools for radar overlays.
+- **egalib-math/**: Custom EGA graphics library and mathematical utility libraries.
+- **misc/**: Miscellaneous projects including Browsee, Pic-Analysis, and TURING samples.
+- **bqtourn/**: Tournament bracket and scoring software.
+- **kb/**: **Knowledge Base** - RDF/Turtle semantic metadata describing the archive's structure, modules, and functions. Queryable via Prolog.
+- **documents/**: PDF documentation and historical records.
 
 ## Knowledge Base (kb/)
 
