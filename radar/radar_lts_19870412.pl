@@ -1,12 +1,12 @@
 %% ============================================================================
-%% radar_lts_v2.pl  --  Labeled Transition System for RADARPAS v2.0
-%%                     (1987-04-12 "RADARPAS Radiotx" snapshot)
+%% radar_lts_19870412.pl  --  Labeled Transition System for RADARPAS
+%%                            (1987-04-12 "RADARPAS Radiotx" snapshot, v2.0)
 %% ============================================================================
 %%
 %% Source program:  radar/19870412 RADARPAS Radiotx/RADAR2.PAS  (+ RADIO.PAS)
-%% Companion file:  radar/radar_lts.pl  (the 1985 E300PC Demo LTS)
+%% Companion file:  radar/radar_lts_1985.pl  (the E300PC Demo LTS)
 %%
-%% This LTS extends the v1 model in radar_lts.pl.  The 1987 codebase
+%% This LTS extends the 1985 model in radar_lts_1985.pl.  The 1987 codebase
 %% introduces:
 %%
 %%   * a persistent picture library  (Pic[0..100], CurrPic, MaxPic),
@@ -18,14 +18,14 @@
 %%   * relaxed UI gating             (toggle_help / toggle_rng_mks / gfx
 %%                                    no longer require Mode <> RxPic).
 %%
-%% Naming, predicate signatures, and structural conventions match v1
-%% (initial_state/1, action/1, guard/2, step/3, trans/3, run/3,
-%% reachable/1-2).  The state term is a strict superset of the v1 term:
+%% Naming, predicate signatures, and structural conventions match the 1985
+%% LTS (initial_state/1, action/1, guard/2, step/3, trans/3, run/3,
+%% reachable/1-2).  The state term is a strict superset of the 1985 term:
 %% an extra Library component is appended.
 %%
 %% ----------------------------------------------------------------------------
 
-:- module(radar_lts_v2, [
+:- module(radar_lts_19870412, [
         initial_state/1,
         guard/2,
         step/3,

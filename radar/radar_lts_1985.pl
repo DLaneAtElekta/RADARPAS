@@ -1,5 +1,6 @@
 %% ============================================================================
-%% radar_lts.pl  --  Labeled Transition System for RADARPAS (1985 E300PC Demo)
+%% radar_lts_1985.pl  --  Labeled Transition System for RADARPAS
+%%                        (1985xxxx "E300PC Demo" snapshot)
 %% ============================================================================
 %%
 %% Source program:  radar/1985xxxx E300PC Demo/RADAR.PAS
@@ -35,7 +36,7 @@
 %%
 %% ----------------------------------------------------------------------------
 
-:- module(radar_lts, [
+:- module(radar_lts_1985, [
         initial_state/1,
         guard/2,
         step/3,
